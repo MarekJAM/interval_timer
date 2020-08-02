@@ -26,13 +26,19 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   Timer _timer;
-  bool _isPaused;
+  bool _isPaused = true;
   Duration _exerciseTime = new Duration(seconds: 30);
   Duration _restTime = new Duration(seconds: 5);
   Duration _timeLeft = new Duration(seconds: 0);
 
-  void startTimer() {
+  @override
+  initState() {
+    super.initState();
     _timeLeft = _exerciseTime;
+  }
+
+  void startTimer() {
+    _isPaused = false;
     const oneSec = const Duration(seconds: 1);
     _timer = new Timer.periodic(
       oneSec,
@@ -125,13 +131,39 @@ class _MainScreenState extends State<MainScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Text("${format(_timeLeft)}", style: TextStyle(fontSize: 30),),
-                RaisedButton(
-                  onPressed: () {
-                    startTimer();
-                    _isPaused = false;
-                  },
-                  child: Text(_isPaused? "start":"stop", style: TextStyle(fontSize: 20),),
+                Text(
+                  "${format(_timeLeft)}",
+                  style: TextStyle(fontSize: 30),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    RaisedButton(
+                      onPressed: () {
+                        _isPaused ? startTimer() : stopTimer();
+                        setState(() {});
+                      },
+                      child: Text(
+                        _isPaused ? "start" : "stop",
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 5),
+                    ),
+                    RaisedButton(
+                      onPressed: () {
+                        stopTimer();
+                        setState(() {
+                          _timeLeft = _exerciseTime;
+                        });
+                      },
+                      child: Text(
+                        "reset",
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
