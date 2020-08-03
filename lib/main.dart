@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
 
 void main() {
   runApp(MyApp());
@@ -29,14 +30,25 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen>
+    with SingleTickerProviderStateMixin {
   Timer _timer;
   bool _isPaused = true;
   bool _isStarted = false;
   bool _isResting = false;
   Duration _exerciseTime = new Duration(seconds: 30);
-  Duration _restTime = new Duration(seconds: 5);
+  Duration _restTime = new Duration(seconds: 10);
   Duration _timeLeft = new Duration(seconds: 0);
+  AudioPlayer _player;
+  final String _startExerciseAudio = "assets/start_exercise.mp3";
+  final String _endExerciseAudio = "assets/end_exercise.mp3";
+
+  @override
+  void initState() {
+    super.initState();
+    _player = AudioPlayer();
+    _player.setAsset(_endExerciseAudio);
+  }
 
   void startTimer() {
     if (!_isStarted) _timeLeft = _exerciseTime;
@@ -47,9 +59,15 @@ class _MainScreenState extends State<MainScreen> {
       oneSec,
       (Timer timer) => setState(
         () {
-          if (_timeLeft < Duration(seconds: 1)) {
+          if (_timeLeft == Duration(seconds: 4)) {
+            _player.play();
+            _timeLeft = _timeLeft - Duration(seconds: 1);
+          } else if (_timeLeft < Duration(seconds: 1)) {
             _isResting ? _timeLeft = _exerciseTime : _timeLeft = _restTime;
             _isResting = !_isResting;
+            _player.stop();
+            _player
+                .setAsset(_isResting ? _startExerciseAudio : _endExerciseAudio);
           } else {
             _timeLeft = _timeLeft - Duration(seconds: 1);
           }
@@ -61,6 +79,7 @@ class _MainScreenState extends State<MainScreen> {
   void stopTimer() {
     _timer.cancel();
     _isPaused = true;
+    _player.stop();
   }
 
   @override
@@ -155,9 +174,7 @@ class _MainScreenState extends State<MainScreen> {
                           child: Text(
                         _isResting ? "Rest" : "Exercise!",
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16
-                        ),
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ))
                     ],
                   ),
@@ -190,6 +207,8 @@ class _MainScreenState extends State<MainScreen> {
                           _timeLeft = _exerciseTime;
                           _isResting = false;
                           _isStarted = false;
+                          _player.stop();
+                          _player.setAsset(_endExerciseAudio);
                         });
                       },
                       child: Text(
