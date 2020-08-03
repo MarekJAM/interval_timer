@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(MyApp());
@@ -8,6 +9,10 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     return MaterialApp(
       title: 'Interval Timer',
       theme: ThemeData(
@@ -27,17 +32,15 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   Timer _timer;
   bool _isPaused = true;
+  bool _isStarted = false;
+  bool _isResting = false;
   Duration _exerciseTime = new Duration(seconds: 30);
   Duration _restTime = new Duration(seconds: 5);
   Duration _timeLeft = new Duration(seconds: 0);
 
-  @override
-  initState() {
-    super.initState();
-    _timeLeft = _exerciseTime;
-  }
-
   void startTimer() {
+    if (!_isStarted) _timeLeft = _exerciseTime;
+    _isStarted = true;
     _isPaused = false;
     const oneSec = const Duration(seconds: 1);
     _timer = new Timer.periodic(
@@ -45,7 +48,8 @@ class _MainScreenState extends State<MainScreen> {
       (Timer timer) => setState(
         () {
           if (_timeLeft < Duration(seconds: 1)) {
-            timer.cancel();
+            _isResting ? _timeLeft = _exerciseTime : _timeLeft = _restTime;
+            _isResting = !_isResting;
           } else {
             _timeLeft = _timeLeft - Duration(seconds: 1);
           }
@@ -69,6 +73,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var deviceSize = MediaQuery.of(context).size;
     return new Scaffold(
       appBar: AppBar(title: Text("Interval timer")),
       body: Column(
@@ -131,6 +136,33 @@ class _MainScreenState extends State<MainScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                Container(
+                  height: deviceSize.height * 0.1,
+                  width: double.infinity,
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                              color: _isResting ? Colors.green : Colors.red),
+                          width: deviceSize.width *
+                              _timeLeft.inSeconds /
+                              (_isResting ? _restTime : _exerciseTime)
+                                  .inSeconds,
+                        ),
+                      ),
+                      Center(
+                          child: Text(
+                        _isResting ? "Rest" : "Exercise!",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16
+                        ),
+                      ))
+                    ],
+                  ),
+                ),
+                Padding(padding: EdgeInsets.only(top: 10)),
                 Text(
                   "${format(_timeLeft)}",
                   style: TextStyle(fontSize: 30),
@@ -156,6 +188,8 @@ class _MainScreenState extends State<MainScreen> {
                         stopTimer();
                         setState(() {
                           _timeLeft = _exerciseTime;
+                          _isResting = false;
+                          _isStarted = false;
                         });
                       },
                       child: Text(
